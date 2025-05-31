@@ -15,6 +15,7 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+        environment: PROD
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
@@ -25,12 +26,30 @@ jobs:
               run:
                 echo "setting up Node.js..."
                 apt-get update
+            - name: pull docker image
+              run: docker pull nginx:latest
+            - name: configure aws credentials
+              uses: aws-actions/configure-aws-credentials@v3
+              with:
+                role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+                aws-region: ${{ secrets.AWS_REGION }}
 
     deploy:
         runs-on: ubuntu-latest
+        environment: PROD
         needs: build
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
             - name: Deploy application
               run: echo "deploying..."
+            - name: login to docker registry
+              run: echo "logging in to docker registry..."
+            - name: login to aws 
+              run: |
+                echo "logging in to aws ecr..."
+                aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
+            - name: push docker image
+              run: |
+                docker tag nginx:latest ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
+                docker push ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
