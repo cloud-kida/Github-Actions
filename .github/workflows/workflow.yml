@@ -21,6 +21,10 @@ jobs:
             - name: Set up Python
               run:
                 echo "building..."
+            - name: set up Node.js
+              run:
+                echo "setting up Node.js..."
+                apt-get update && apt-get install -y nodejs npm
 
     deploy:
         runs-on: ubuntu-latest
