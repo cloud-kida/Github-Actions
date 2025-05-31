@@ -24,7 +24,7 @@ jobs:
             - name: set up Node.js
               run:
                 echo "setting up Node.js..."
-                apt-get update && apt-get install -y nodejs npm
+                apt-get update
 
     deploy:
         runs-on: ubuntu-latest
