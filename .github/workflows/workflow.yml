@@ -15,7 +15,7 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
-        #environment: PROD
+        environment: PROD
         permissions:
             id-token: write    
             contents: read
@@ -23,7 +23,7 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v2
             - name: Set up Python
-              run: |
+              run:
                 echo "building..."
             - name: set up Node.js
               run:
@@ -34,8 +34,16 @@ jobs:
             - name: configure aws credentials
               uses: aws-actions/configure-aws-credentials@v3
               with:
-                role-to-assume: arn:aws:iam::966439453649:role/Github-Actions-Prod-Cloud-Kida
-                aws-region: ap-south-1
+                role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+                aws-region: ${{ secrets.AWS_REGION }}
+            - name: login to aws 
+              run: |
+                echo "logging in to aws ecr..."
+                aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
+            - name: push docker image
+              run: |
+                docker tag nginx:latest ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
+                docker push ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
 
     deploy:
         runs-on: ubuntu-latest
@@ -48,11 +56,4 @@ jobs:
               run: echo "deploying..."
             - name: login to docker registry
               run: echo "logging in to docker registry..."
-            - name: login to aws 
-              run: |
-                echo "logging in to aws ecr..."
-                aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
-            - name: push docker image
-              run: |
-                docker tag nginx:latest ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
-                docker push ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.APP_NAME }}:latest
+            
